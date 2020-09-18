@@ -2,7 +2,6 @@ package web.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,9 +13,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Service
-@Transactional
-
-public class UserServiceInp implements UserService, UserDetailsService {
+public class UserServiceInp implements UserService {
 
     private UserDao userDao;
 
@@ -60,7 +57,6 @@ public class UserServiceInp implements UserService, UserDetailsService {
     }
 
     @Override
-    @Transactional
     public List<User> getAllUsers() {
         return userDao.getAllUsers();
     }

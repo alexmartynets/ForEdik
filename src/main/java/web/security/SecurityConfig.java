@@ -1,31 +1,28 @@
 package web.security;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import web.service.UserService;
 import web.service.UserServiceInp;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
-    private final UserServiceInp userServiceInp; // сервис, с помощью которого тащим пользователя
-    private final SuccessUserHandler successUserHandler; // класс, в котором описана логика перенаправления пользователей по ролям
+public class    SecurityConfig extends WebSecurityConfigurerAdapter {
+    private final UserService userServiceInp; // сервис, с помощью которого тащим пользователя
+    // класс, в котором описана логика перенаправления пользователей по ролям
 
-    public SecurityConfig(@Qualifier("userServiceInp") UserServiceInp userServiceInp, SuccessUserHandler successUserHandler) {
+    public SecurityConfig(UserServiceInp userServiceInp) {
         this.userServiceInp = userServiceInp;
-        this.successUserHandler = successUserHandler;
     }
 
-    @Autowired
-    public void configureGlobalSecurity(AuthenticationManagerBuilder auth) throws Exception {
+    @Override
+    public void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userServiceInp).passwordEncoder(passwordEncoder()); // конфигурация для прохождения аутентификации
     }
     @Override
@@ -34,7 +31,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // указываем страницу с формой логина
                 .loginPage("/login")
                 //указываем логику обработки при логине
-                .successHandler(successUserHandler)
+                .successHandler(new SuccessUserHandler())
                 // указываем action с формы логина
                 .loginProcessingUrl("/login")
                 // Указываем параметры логина и пароля с формы логина
@@ -57,15 +54,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // делаем страницу регистрации недоступной для авторизированных пользователей
                 .authorizeRequests()
                 //страницы аутентификаци доступна всем
-                .antMatchers("/login").anonymous()
+                .antMatchers("/login").permitAll()
                 // защищенные URL
-                .antMatchers("/users").access("hasAnyRole('ROLE_ADMIN')").anyRequest().authenticated()
-                .antMatchers("/user").access("hasAnyRole('ROLR_USER')").anyRequest().authenticated();
+                .antMatchers("/users").hasAnyRole("ROLE_ADMIN")
+                .antMatchers("/user").hasAnyRole("ROLE_USER", "ROLE_ADMIN");
         ;
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return NoOpPasswordEncoder.getInstance();
+    public BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
